@@ -9,7 +9,7 @@ guard let url = URL(string: "someURL") else { return }
 let request = URLRequest(url: url)
 do {
     for try await data in SSEStream(request: request) {
-        guard let text = String(data: data, encoding: .utf8) else { fatalError() }
+        guard let text = String(data: data, encoding: .utf8) else { return }
         print(text)
     }
     print("Completed")
