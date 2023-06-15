@@ -4,7 +4,7 @@ Simple package for simplification of Server-sent events using HTTP in Swift impl
 
 Example:
 
-```
+```swift
 guard let url = URL(string: "someURL") else { return }
 let request = URLRequest(url: url)
 do {
