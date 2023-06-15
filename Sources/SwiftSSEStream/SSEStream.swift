@@ -1,12 +1,12 @@
 import Foundation
 
-struct SSEStream: AsyncSequence {
+public struct SSEStream: AsyncSequence {
 
-    typealias Element = Data
+    public typealias Element = Data
 
     private let stream: AsyncThrowingStream<Data, Error>
 
-    init(sessionConfiguration: URLSessionConfiguration = .default, request: URLRequest) {
+    public init(sessionConfiguration: URLSessionConfiguration = .default, request: URLRequest) {
         stream = AsyncThrowingStream { continuation in
             let forwarder = DataTaskForwarder(
                 sessionConfiguration: sessionConfiguration,
@@ -21,7 +21,7 @@ struct SSEStream: AsyncSequence {
         }
     }
 
-    func makeAsyncIterator() -> AsyncThrowingStream<Data, Error>.Iterator {
+    public func makeAsyncIterator() -> AsyncThrowingStream<Data, Error>.Iterator {
         stream.makeAsyncIterator()
     }
 
