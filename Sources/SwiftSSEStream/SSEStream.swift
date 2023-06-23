@@ -50,13 +50,15 @@ public struct SSEStream: AsyncSequence {
         private let sessionConfiguration: URLSessionConfiguration
         private let request: URLRequest
         private let onEventReceived: (Event) -> Void
-        private let onCompletion: (Error?) -> Void
+        private let onCompletion: (SSEStreamError?) -> Void
+        private var lastReceivedData: Data?
+        private var errorResponseStatusCode: Int?
 
         init(
             sessionConfiguration: URLSessionConfiguration,
             request: URLRequest,
             onEventReceived: @escaping (Event) -> Void,
-            onCompletion: @escaping (Error?) -> Void
+            onCompletion: @escaping (SSEStreamError?) -> Void
         ) {
             self.sessionConfiguration = sessionConfiguration
             self.request = request
@@ -73,6 +75,7 @@ public struct SSEStream: AsyncSequence {
         }
 
         func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+            lastReceivedData = data
             guard let text = String(data: data, encoding: .utf8), let id = id(from: text) else { return }
             onEventReceived(
                 Event(
@@ -84,7 +87,29 @@ public struct SSEStream: AsyncSequence {
         }
 
         func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-            onCompletion(error)
+            if errorResponseStatusCode != nil || error != nil {
+                onCompletion(
+                    SSEStreamError(
+                        responseStatusCode: errorResponseStatusCode,
+                        data: lastReceivedData,
+                        error: error
+                    )
+                )
+            } else {
+                onCompletion(nil)
+            }
+        }
+
+        func urlSession(
+            _ session: URLSession,
+            dataTask: URLSessionDataTask,
+            didReceive response: URLResponse
+        ) async -> URLSession.ResponseDisposition {
+            let responseStatusCode = (response as? HTTPURLResponse)?.statusCode
+            if let responseStatusCode, !(200...299).contains(responseStatusCode) {
+                errorResponseStatusCode = responseStatusCode
+            }
+            return .allow
         }
 
         private func id(from text: String) -> String? {
