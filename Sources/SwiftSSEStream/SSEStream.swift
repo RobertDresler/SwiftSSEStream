@@ -2,7 +2,7 @@ import Foundation
 
 public struct SSEStream: AsyncSequence {
 
-    /// This struct parses events which looks like this
+    /// This struct parses events which look like this
     ///
     /// id: xxx
     /// data: xxx
