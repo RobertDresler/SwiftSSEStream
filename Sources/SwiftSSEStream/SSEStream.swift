@@ -52,6 +52,7 @@ public struct SSEStream: AsyncSequence {
         private let onEventReceived: (Event) -> Void
         private let onCompletion: (SSEStreamError?) -> Void
         private var lastReceivedData: Data?
+        private var textsBuffer = [String]()
         private var errorResponseStatusCode: Int?
 
         init(
@@ -76,7 +77,7 @@ public struct SSEStream: AsyncSequence {
 
         func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
             lastReceivedData = data
-            guard let text = String(data: data, encoding: .utf8), let id = id(from: text) else { return }
+            guard let text = completeText(for: data), let id = id(from: text) else { return }
             onEventReceived(
                 Event(
                     id: id,
@@ -131,6 +132,18 @@ public struct SSEStream: AsyncSequence {
                 guard let range = Range(match.range, in: text) else { return nil }
                 return text[range].replacingOccurrences(of: field, with: "")
             }
+        }
+
+        private func completeText(for partialData: Data) -> String? {
+            guard let partialText = String(data: partialData, encoding: .utf8) else { return nil }
+            let newBuffer = textsBuffer + [partialText]
+            let text = newBuffer.joined()
+            guard text.last == "\n" else {
+                textsBuffer = newBuffer
+                return nil
+            }
+            textsBuffer = []
+            return text
         }
 
     }
